@@ -25,7 +25,7 @@ async function run() {
     await client.connect();
     const partsCollection = client.db("partsBd").collection("parts");
     // const usersCollection = client.db("partsBd").collection("user");
-    // const ordersCollection = client.db("partsBd").collection("order");
+    const ordersCollection = client.db("partsBd").collection("order");
     // const paymentsCollection = client.db("partsBd").collection("payment");
     // const reviewsCollection = client.db("partsBd").collection("review");
 
@@ -53,12 +53,21 @@ async function run() {
       res.send(item);
     });
 
-    app.post("/parts", async (req, res) => {
-      const parts = req.body;
-      const result = await partsCollection.insertOne(parts);
-      if (result.insertedId) {
-        res.send({ success: true, message: "Product added successfully" });
-      }
+    //
+    //ORDERs
+    app.get("/order", async (req, res) => {
+      const result = await ordersCollection.find().toArray();
+      res.send(result);
+    });
+    app.post("/order", async (req, res) => {
+      const order = req.body;
+      const filter = { _id: new ObjectId(order.partsId) };
+      const parts = await partsCollection.findOne(filter);
+      const currentAvailable = parts.available - order.quantity;
+      const updatedDoc = { $set: { available: currentAvailable } };
+      await partsCollection.updateOne(filter, updatedDoc);
+      const result = await ordersCollection.insertOne(order);
+      res.send({ success: true, message: "Order Confirmed! Pay Now" }, result);
     });
   } finally {
   }
