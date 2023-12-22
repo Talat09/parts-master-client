@@ -1,7 +1,8 @@
 const express = require("express");
 const cors = require("cors");
 // const jwt = require("jsonwebtoken");
-
+const nodemailer = require("nodemailer");
+const mg = require("nodemailer-mailgun-transport");
 require("dotenv").config();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 // const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
@@ -11,7 +12,83 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-//
+//auth for email
+const auth = {
+  auth: {
+    api_key: process.env.EMAIL_SENDER_KEY,
+    domain: process.env.EMAIL_DOMAIN,
+  },
+};
+const nodemailerMailgun = nodemailer.createTransport(mg(auth));
+
+//send email
+const sendEmail = (order) => {
+  const { partsName, quantity, amount, name, email, paid, status } = order;
+
+  let subject;
+  let html;
+
+  if (!paid) {
+    (subject = `Your order for ${partsName} is received`),
+      (html = `
+          <div>
+              <h2>Hello ${name}</h2>
+              <p>Your order for ${partsName}, quantity ${quantity} has been placed!</p>
+              <p>Please pay ${amount} to confirm the order.</p>
+              <p>Thank You.</p>
+
+              <h3>Our Address</h3>
+              <p>Agrabad, Chittagong</p>
+              <p>Bangladesh</p>
+              <a href="https://web.programming-hero.com">unsubscribe</a>
+          </div>
+      `);
+  } else if (status === "pending") {
+    (subject = `Your order for ${partsName} is pending for shipping`),
+      (html = `
+          <div>
+              <h2>Hello ${name}</h2>
+              <p>Your order for ${partsName}, quantity ${quantity} is pending for shipping!</p>
+              <p>Thank You.</p>
+
+              <h3>Our Address</h3>
+              <p>Agrabad, Chittagong</p>
+              <p>Bangladesh</p>
+              <a href="https://web.programming-hero.com">unsubscribe</a>
+          </div>
+      `);
+  } else if (status === "shipped") {
+    (subject = `Your order for ${partsName} is shipped`),
+      (html = `
+          <div>
+              <h2>Hello ${name}</h2>
+              <p>Your order for ${partsName}, quantity ${quantity} is shipped!</p>
+              <p>Thank You for being with us.</p>
+
+              <h3>Our Address</h3>
+              <p>Agrabad, Chittagong</p>
+              <p>Bangladesh</p>
+              <a href="https://web.programming-hero.com">unsubscribe</a>
+          </div>
+      `);
+  }
+
+  const emailClient = {
+    from: process.env.EMAIL_SENDER,
+    to: email,
+    subject: subject,
+    html: html,
+  };
+
+  nodemailerMailgun.sendMail(emailClient, (err, info) => {
+    if (err) {
+      console.log(`Error: ${err}`);
+    } else {
+      console.log(`Response: ${info}`);
+    }
+  });
+};
+//mongodb connection setup
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.esr8cdy.mongodb.net/`;
 console.log(uri);
 const client = new MongoClient(uri, {
@@ -67,7 +144,10 @@ async function run() {
       const updatedDoc = { $set: { available: currentAvailable } };
       await partsCollection.updateOne(filter, updatedDoc);
       const result = await ordersCollection.insertOne(order);
-      res.send({ success: true, message: "Order Confirmed! Pay Now" }, result);
+      if (result.insertedId) {
+        sendEmail(order);
+        res.send({ success: true, message: "Order Confirmed! Pay Now" });
+      }
     });
   } finally {
   }
