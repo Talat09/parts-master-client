@@ -120,6 +120,24 @@ async function run() {
     // const paymentsCollection = client.db("partsBd").collection("payment");
     // const reviewsCollection = client.db("partsBd").collection("review");
 
+    //verify admin function
+
+    async function verifyAdmin(req, res, next) {
+      const email = req.decoded.email;
+      const user = await usersCollection.findOne({ email });
+      const isAdmin = user.role === "admin";
+      if (isAdmin) {
+        next();
+      }
+    }
+
+    //ADMIN
+    app.get("/admin/:email", verifyJWT, async (req, res) => {
+      const email = req.params.email;
+      const user = await usersCollection.findOne({ email });
+      const isAdmin = user.role === "admin";
+      res.send({ admin: isAdmin });
+    });
     //USER:Get all user
     app.get("/user", verifyJWT, async (req, res) => {
       const user = await usersCollection.find().toArray();
@@ -207,7 +225,7 @@ async function run() {
       console.log(result);
     });
 
-    app.get("/parts/:id", async (req, res) => {
+    app.get("/parts/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
       console.log(id);
       const query = { _id: new ObjectId(id) };
@@ -218,11 +236,11 @@ async function run() {
 
     //
     //ORDERs
-    app.get("/order", async (req, res) => {
+    app.get("/order", verifyJWT, verifyAdmin, async (req, res) => {
       const result = await ordersCollection.find().toArray();
       res.send(result);
     });
-    app.post("/order", async (req, res) => {
+    app.post("/order", verifyJWT, async (req, res) => {
       const order = req.body;
       const filter = { _id: new ObjectId(order.partsId) };
       const parts = await partsCollection.findOne(filter);
