@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-// const jwt = require("jsonwebtoken");
+const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const mg = require("nodemailer-mailgun-transport");
 require("dotenv").config();
@@ -11,7 +11,21 @@ const app = express();
 //middle ware
 app.use(express.json());
 app.use(cors());
-
+//verify jsonwebtoken
+function verifyJWT(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).send({ message: "Unauthorized access" });
+  }
+  const accessToken = authHeader.split(" ")[1];
+  jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(403).send({ message: "Forbidden access" });
+    }
+    req.decoded = decoded;
+    next();
+  });
+}
 //auth for email
 const auth = {
   auth: {
@@ -101,10 +115,16 @@ async function run() {
   try {
     await client.connect();
     const partsCollection = client.db("partsBd").collection("parts");
-    // const usersCollection = client.db("partsBd").collection("user");
+    const usersCollection = client.db("partsBd").collection("user");
     const ordersCollection = client.db("partsBd").collection("order");
     // const paymentsCollection = client.db("partsBd").collection("payment");
     // const reviewsCollection = client.db("partsBd").collection("review");
+
+    //USER
+    app.get("/user", verifyJWT, async (req, res) => {
+      const user = await usersCollection.find().toArray();
+      res.send(user);
+    });
 
     //PARTS
     app.get("/parts", async (req, res) => {
