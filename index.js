@@ -120,10 +120,16 @@ async function run() {
     // const paymentsCollection = client.db("partsBd").collection("payment");
     // const reviewsCollection = client.db("partsBd").collection("review");
 
-    //USER
+    //USER:Get all user
     app.get("/user", verifyJWT, async (req, res) => {
       const user = await usersCollection.find().toArray();
       res.send(user);
+    });
+    //USER: Find specific user by email
+    app.get("/user/:email", verifyJWT, async (req, res) => {
+      const email = req.params.email;
+      const user = await usersCollection.findOne({ email });
+      res.send({ user });
     });
 
     //PARTS
