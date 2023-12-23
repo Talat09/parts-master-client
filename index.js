@@ -131,6 +131,66 @@ async function run() {
       const user = await usersCollection.findOne({ email });
       res.send({ user });
     });
+    //user admin find by email
+    app.patch(
+      "/user/admin/:email",
+      verifyJWT,
+      verifyAdmin,
+      async (req, res) => {
+        const email = req.params.email;
+        const filter = { email };
+        const updatedDoc = { $set: { role: "admin" } };
+        const updatedUser = await usersCollection.updateOne(filter, updatedDoc);
+        if (updatedUser.modifiedCount) {
+          res.send({ success: true, message: "Make admin success" });
+        }
+      }
+    );
+    //user post by email
+    app.put("/user/:email", async (req, res) => {
+      const email = req.params.email;
+      const user = req.body;
+      const filter = { email };
+      const options = { upsert: true };
+      const updatedDoc = { $set: user };
+      const accessToken = jwt.sign({ email }, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: "1d",
+      });
+      const result = await usersCollection.updateOne(
+        filter,
+        updatedDoc,
+        options
+      );
+      if (result) {
+        res.send({ accessToken });
+      }
+    });
+
+    //user update api
+
+    app.put("/user/update/:email", verifyJWT, async (req, res) => {
+      const email = req.params.email;
+      const user = req.body;
+      const filter = { email };
+      const options = { upsert: true };
+      const updatedDoc = { $set: user };
+      const updatedUser = await usersCollection.updateOne(
+        filter,
+        updatedDoc,
+        options
+      );
+      if (updatedUser.modifiedCount || updatedUser.matchedCount) {
+        res.send({ success: true, message: "Profile updated!" });
+      }
+    });
+    //user Delete api
+    app.delete("/user/:email", verifyJWT, verifyAdmin, async (req, res) => {
+      const email = req.params.email;
+      const result = await usersCollection.deleteOne({ email });
+      if (result.deletedCount) {
+        res.send({ success: true, message: "User removed" });
+      }
+    });
 
     //PARTS
     app.get("/parts", async (req, res) => {
