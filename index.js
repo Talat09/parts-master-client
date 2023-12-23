@@ -118,7 +118,7 @@ async function run() {
     const usersCollection = client.db("partsBd").collection("user");
     const ordersCollection = client.db("partsBd").collection("order");
     // const paymentsCollection = client.db("partsBd").collection("payment");
-    // const reviewsCollection = client.db("partsBd").collection("review");
+    const reviewsCollection = client.db("partsBd").collection("review");
 
     //verify admin function
 
@@ -222,10 +222,10 @@ async function run() {
         .limit(size)
         .toArray();
       res.send({ success: true, data: result });
-      console.log(result);
+      // console.log(result);
     });
 
-    app.get("/parts/:id", verifyJWT, async (req, res) => {
+    app.get("/parts/:id", async (req, res) => {
       const id = req.params.id;
       console.log(id);
       const query = { _id: new ObjectId(id) };
@@ -242,6 +242,7 @@ async function run() {
     });
     app.post("/order", verifyJWT, async (req, res) => {
       const order = req.body;
+      console.log(order);
       const filter = { _id: new ObjectId(order.partsId) };
       const parts = await partsCollection.findOne(filter);
       const currentAvailable = parts.available - order.quantity;
@@ -251,6 +252,20 @@ async function run() {
       if (result.insertedId) {
         sendEmail(order);
         res.send({ success: true, message: "Order Confirmed! Pay Now" });
+      }
+    });
+    //GET All Review
+    app.get("/review", async (req, res) => {
+      const result = await reviewsCollection.find().toArray();
+      res.send(result);
+    });
+    //POST Review
+    app.post("/review", verifyJWT, async (req, res) => {
+      const review = req.body;
+      console.log(review);
+      const result = await reviewsCollection.insertOne(review);
+      if (result.insertedId) {
+        res.send({ success: true, message: "Thanks for your review!" });
       }
     });
   } finally {
