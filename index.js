@@ -210,7 +210,7 @@ async function run() {
       }
     });
 
-    //PARTS
+    //Get All Api PARTS
     app.get("/parts", async (req, res) => {
       const pageText = req.query.page;
       const sizeText = req.query.size;
@@ -224,7 +224,7 @@ async function run() {
       res.send({ success: true, data: result });
       // console.log(result);
     });
-    //get specific product
+    //Get specific Parts by id
     app.get("/parts/:id", async (req, res) => {
       const id = req.params.id;
       console.log(id);
@@ -233,6 +233,7 @@ async function run() {
       console.log(item);
       res.send(item);
     });
+    //PARTS POST Api
     app.post("/parts", verifyJWT, verifyAdmin, async (req, res) => {
       const parts = req.body;
       const result = await partsCollection.insertOne(parts);
@@ -240,7 +241,7 @@ async function run() {
         res.send({ success: true, message: "Product added successfully" });
       }
     });
-
+    //Delete Specific Parts Api
     app.delete("/parts/:id", verifyJWT, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
@@ -250,11 +251,12 @@ async function run() {
       }
     });
     //
-    //ORDERs
+    //GET All ORDERS
     app.get("/order", verifyJWT, verifyAdmin, async (req, res) => {
       const result = await ordersCollection.find().toArray();
       res.send(result);
     });
+    //CREATE ORDER API
     app.post("/order", verifyJWT, async (req, res) => {
       const order = req.body;
       console.log(order);
@@ -267,6 +269,28 @@ async function run() {
       if (result.insertedId) {
         sendEmail(order);
         res.send({ success: true, message: "Order Confirmed! Pay Now" });
+      }
+    });
+    //GET Specific Order by user email
+    app.get("/order/user/:email", verifyJWT, async (req, res) => {
+      const email = req.params.email;
+      const orders = await ordersCollection.find({ email }).toArray();
+      res.send(orders);
+    });
+    //Get specific order by order id
+    app.get("/order/:id", verifyJWT, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const order = await ordersCollection.findOne(query);
+      res.send(order);
+    });
+    //Delete order by order id--> for cancel order
+    app.delete("/order/:id", verifyJWT, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await ordersCollection.deleteOne(query);
+      if (result.deletedCount) {
+        res.send({ success: true, message: "Order canceled" });
       }
     });
     //GET All Review
