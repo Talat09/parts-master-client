@@ -255,7 +255,7 @@ async function run() {
     //Delete Specific Parts Api
     app.delete("/parts/:id", verifyJWT, verifyAdmin, async (req, res) => {
       const id = req.params.id;
-      const query = { _id: ObjectId(id) };
+      const query = { _id: new ObjectId(id) };
       const item = await partsCollection.deleteOne(query);
       if (item.deletedCount) {
         res.send({ success: true, message: "Product deleted" });
@@ -291,14 +291,14 @@ async function run() {
     //Get specific order by order id
     app.get("/order/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
-      const query = { _id: ObjectId(id) };
+      const query = { _id: new ObjectId(id) };
       const order = await ordersCollection.findOne(query);
       res.send(order);
     });
     //Delete order by order id--> for cancel order
     app.delete("/order/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
-      const query = { _id: ObjectId(id) };
+      const query = { _id: new ObjectId(id) };
       const result = await ordersCollection.deleteOne(query);
       if (result.deletedCount) {
         res.send({ success: true, message: "Order canceled" });
@@ -308,7 +308,7 @@ async function run() {
     app.put("/order/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
       const payment = req.body;
-      const filter = { _id: ObjectId(id) };
+      const filter = { _id: new ObjectId(id) };
       const updatedDoc = {
         $set: {
           paid: true,
@@ -327,7 +327,7 @@ async function run() {
     //update order for shipped or unshipped order
     app.patch("/order/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
-      const filter = { _id: ObjectId(id) };
+      const filter = { _id: new ObjectId(id) };
       const updatedDoc = { $set: { status: "shipped" } };
       const result = await ordersCollection.updateOne(filter, updatedDoc);
       if (result.modifiedCount) {
