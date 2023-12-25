@@ -293,6 +293,39 @@ async function run() {
         res.send({ success: true, message: "Order canceled" });
       }
     });
+    //update oder for payment status
+    app.put("/order/:id", verifyJWT, async (req, res) => {
+      const id = req.params.id;
+      const payment = req.body;
+      const filter = { _id: ObjectId(id) };
+      const updatedDoc = {
+        $set: {
+          paid: true,
+          transactionId: payment.transactionId,
+          status: "pending",
+        },
+      };
+      await paymentsCollection.insertOne(payment);
+      const result = await ordersCollection.updateOne(filter, updatedDoc);
+      if (result.modifiedCount) {
+        const order = await ordersCollection.findOne(filter);
+        sendEmail(order);
+        res.send({ success: true });
+      }
+    });
+    //update order for shipped or unshipped order
+    app.patch("/order/:id", verifyJWT, async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const updatedDoc = { $set: { status: "shipped" } };
+      const result = await ordersCollection.updateOne(filter, updatedDoc);
+      if (result.modifiedCount) {
+        const order = await ordersCollection.findOne(filter);
+        sendEmail(order);
+        res.send({ success: true, message: "Status updated to shipped" });
+      }
+    });
+
     //GET All Review
     app.get("/review", async (req, res) => {
       const result = await reviewsCollection.find().toArray();
