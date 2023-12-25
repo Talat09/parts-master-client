@@ -5,7 +5,7 @@ const nodemailer = require("nodemailer");
 const mg = require("nodemailer-mailgun-transport");
 require("dotenv").config();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
-// const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const port = process.env.PORT || 5000;
 const app = express();
 //middle ware
@@ -117,7 +117,7 @@ async function run() {
     const partsCollection = client.db("partsBd").collection("parts");
     const usersCollection = client.db("partsBd").collection("user");
     const ordersCollection = client.db("partsBd").collection("order");
-    // const paymentsCollection = client.db("partsBd").collection("payment");
+    const paymentsCollection = client.db("partsBd").collection("payment");
     const reviewsCollection = client.db("partsBd").collection("review");
 
     //verify admin function
@@ -130,7 +130,18 @@ async function run() {
         next();
       }
     }
+    //PAYMENT
+    app.post("/create-payment-intent", async (req, res) => {
+      const order = req.body;
+      const total = order.amount;
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: total * 100,
+        currency: "usd",
+        payment_method_types: ["card"],
+      });
 
+      res.send({ clientSecret: paymentIntent.client_secret });
+    });
     //ADMIN
     app.get("/admin/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
