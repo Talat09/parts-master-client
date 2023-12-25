@@ -224,7 +224,7 @@ async function run() {
       res.send({ success: true, data: result });
       // console.log(result);
     });
-
+    //get specific product
     app.get("/parts/:id", async (req, res) => {
       const id = req.params.id;
       console.log(id);
@@ -233,7 +233,22 @@ async function run() {
       console.log(item);
       res.send(item);
     });
+    app.post("/parts", verifyJWT, verifyAdmin, async (req, res) => {
+      const parts = req.body;
+      const result = await partsCollection.insertOne(parts);
+      if (result.insertedId) {
+        res.send({ success: true, message: "Product added successfully" });
+      }
+    });
 
+    app.delete("/parts/:id", verifyJWT, verifyAdmin, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const item = await partsCollection.deleteOne(query);
+      if (item.deletedCount) {
+        res.send({ success: true, message: "Product deleted" });
+      }
+    });
     //
     //ORDERs
     app.get("/order", verifyJWT, verifyAdmin, async (req, res) => {
