@@ -8,7 +8,19 @@
   ],
   "routes": [
     {
-      "src": "/(.*)",
+      "src": "/",
+      "dest": "/"
+    },
+    {
+      "src": "/api/auth",
+      "dest": "/"
+    },
+    {
+      "src": "/api/messages",
+      "dest": "/"
+    },
+    {
+      "src": "/api/users",
       "dest": "/"
     }
   ]
