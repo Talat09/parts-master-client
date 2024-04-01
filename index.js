@@ -124,7 +124,9 @@ async function run() {
 
     async function verifyAdmin(req, res, next) {
       const email = req.decoded.email;
+
       const user = await usersCollection.findOne({ email });
+
       const isAdmin = user.role === "admin";
       if (isAdmin) {
         next();
@@ -238,10 +240,10 @@ async function run() {
     //Get specific Parts by id
     app.get("/parts/:id", async (req, res) => {
       const id = req.params.id;
-      console.log(id);
+      // console.log(id);
       const query = { _id: new ObjectId(id) };
       const item = await partsCollection.findOne(query);
-      console.log(item);
+      // console.log(item);
       res.send(item);
     });
     //PARTS POST Api
@@ -345,7 +347,7 @@ async function run() {
     //POST Review
     app.post("/review", verifyJWT, async (req, res) => {
       const review = req.body;
-      console.log(review);
+      // console.log(review);
       const result = await reviewsCollection.insertOne(review);
       if (result.insertedId) {
         res.send({ success: true, message: "Thanks for your review!" });
