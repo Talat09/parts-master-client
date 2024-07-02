@@ -26,6 +26,7 @@ function verifyJWT(req, res, next) {
     next();
   });
 }
+
 //auth for email
 const auth = {
   auth: {
@@ -162,6 +163,7 @@ async function run() {
       const user = await usersCollection.findOne({ email });
       res.send({ user });
     });
+
     //user admin find by email
     app.patch(
       "/user/admin/:email",
